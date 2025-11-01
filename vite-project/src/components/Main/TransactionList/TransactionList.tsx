@@ -127,13 +127,13 @@ const TransactionItemsContainer = styled.div`
 
 const TransactionItem = styled.div`
   display: grid;
-  grid-template-columns: 80px 1fr 120px 120px;
+  grid-template-columns: 80px 1fr 120px 120px 60px;
   gap: 16px;
-  // padding: 12px 0;
   height: 48px;
   margin-bottom: 0;
   align-items: center;
   transition: all 0.2s ease;
+  position: relative;
 
   &:hover {
     background-color: #f9f9f9;
@@ -170,6 +170,27 @@ const Amount = styled.div<{ isIncome: boolean }>`
   font-weight: 700;
   text-align: right;
   color: #333;
+`;
+
+const DeleteButton = styled.button`
+  opacity: 0;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: #d32f2f;
+  background-color: white;
+  border: 1px solid #d32f2f;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  ${TransactionItem}:hover & {
+    opacity: 1;
+  }
+
+  &:hover {
+    background-color: #d32f2f;
+    color: white;
+  }
 `;
 
 const EmptyState = styled.div`
@@ -231,7 +252,19 @@ export default function TransactionList() {
     throw new Error('TransactionList must be used within TransactionContext.Provider');
   }
 
-  const { transactions } = context;
+  const { transactions, dispatch } = context;
+
+  const handleDelete = (transaction: Transaction) => {
+    const typeText = transaction.type === "income" ? "수입" : "지출";
+    const message = `해당 내역을 삭제하시겠습니까?\n카테고리: ${typeText}/${transaction.category}\n내용: ${transaction.content}\n결제수단: ${transaction.paymentMethod}\n금액: ${formatAmount(transaction.amount)}원`;
+
+    if (window.confirm(message)) {
+      dispatch({ type: 'DELETE_ITEM', payload: transaction });
+      // setTimeout(() => {
+
+      // }, 1000);
+    }
+  };
 
   if (transactions.length === 0) {
     return (
@@ -288,6 +321,9 @@ export default function TransactionList() {
                   <Amount isIncome={transaction.amount > 0}>
                     {transaction.amount > 0 ? '+' : '-'}{formatAmount(transaction.amount)}원
                   </Amount>
+                  <DeleteButton onClick={() => handleDelete(transaction)}>
+                    삭제
+                  </DeleteButton>
                 </TransactionItem>
               ))}
             </TransactionItemsContainer>

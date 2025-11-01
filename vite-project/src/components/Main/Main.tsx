@@ -9,8 +9,13 @@ const transactionReducer = (state: Transaction[], action: TransactionAction): Tr
         case 'ADD_ITEM':
             return [action.payload, ...state]; // 새 항목을 맨 위에 추가
         case 'DELETE_ITEM':
-            // DELETE_ITEM logic can be added later
-            return state;
+            return state.filter(t =>
+                !(t.date === action.payload.date &&
+                  t.amount === action.payload.amount &&
+                  t.content === action.payload.content &&
+                  t.paymentMethod === action.payload.paymentMethod &&
+                  t.category === action.payload.category)
+            );
         default:
             return state;
     }

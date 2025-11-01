@@ -11,7 +11,7 @@ export interface Transaction {
 
 export type TransactionAction =
     | { type: 'ADD_ITEM'; payload: Transaction }
-    | { type: 'DELETE_ITEM'; payload: string | number };
+    | { type: 'DELETE_ITEM'; payload: Transaction };
 
 export interface TransactionContextType {
     transactions: Transaction[];  // Array of all transactions (history)
