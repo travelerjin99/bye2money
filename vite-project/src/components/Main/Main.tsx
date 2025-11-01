@@ -1,5 +1,6 @@
 import React, { useReducer } from 'react';
 import Form from './Form/Form';
+import TransactionList from './TransactionList/TransactionList';
 import { TransactionContext } from '../../contexts/TransactionContext';
 import type { Transaction, TransactionAction } from '../../contexts/TransactionContext';
 
@@ -20,13 +21,8 @@ export default function Main() {
     return (
         <TransactionContext.Provider value={{ transactions, dispatch }}>
             <main>
-                {/* <div>Main Component</div> */}
                 <Form />
-                {/* <TransactionList />  */}
-                {/* 여기에 가계부의 다른 핵심 기능들이 들어갑니다. */}
-                <pre>
-                    {JSON.stringify(transactions, null, 2)}
-                </pre>
+                <TransactionList />
             </main>
         </TransactionContext.Provider>
     );

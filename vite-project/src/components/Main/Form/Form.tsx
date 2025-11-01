@@ -99,7 +99,8 @@ export default function Form() {
     const isButtonDisabled =
         formData.amount.trim() === "" ||
         formData.content.trim() === "" ||
-        formData.paymentMethod.trim() === "";
+        formData.paymentMethod.trim() === "" ||
+        formData.category.trim() === "";
 
     // Unified change handler
     const handleChange = (field: keyof typeof formData) => (//args from keys of formData
@@ -212,6 +213,7 @@ export default function Form() {
                 categories={CATEGORIES}
                 value={formData.category}
                 onChange={handleChange("category")}
+                placeholder="선택하세요"
             />
 
             <SubmitButton type="submit" disabled={isButtonDisabled} size="M" pattern="iconOnly">
