@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import styled from "styled-components";
 import Button from "../../Header/Button";
 import { getTodayDateString } from "../../../utils";
@@ -6,6 +6,8 @@ import CustomSelect from "./CustomSelect";
 import FormInput from "./FormInput";
 import AmountInput from "./AmountInput";
 import CategorySelect from "./CategorySelect";
+
+import { TransactionContext } from '../../../contexts/TransactionContext';
 
 // --- Category data ---
 const CATEGORIES = {
@@ -73,68 +75,122 @@ const SubmitButton = styled(Button)`
 
 // --- Form Component ---
 export default function Form() {
-    const [transaction, setTransaction] = useState<"expense" | "income">("expense");
-    const [amount, setAmount] = useState("");
-    const [content, setContent] = useState("");
+    const [formData, setFormData] = useState({
+        type: "expense" as "expense" | "income",
+        date: getTodayDateString(),
+        amount: "",
+        content: "",
+        paymentMethod: "",
+        category: "",
+    });
+
     const [paymentMethods, setPaymentMethods] = useState([
         "현대카드",
         "현금",
         "신한카드",
     ]);
-    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
 
-    const isButtonDisabled = amount.trim() === "" || content.trim() === "" || selectedPaymentMethod.trim() === "";
-    const todayDate = getTodayDateString();
+    const context = useContext(TransactionContext);
+    if (!context) {
+        throw new Error('Form must be used within TransactionContext.Provider');
+    }
+    const { dispatch } = context;
 
+    const isButtonDisabled =
+        formData.amount.trim() === "" ||
+        formData.content.trim() === "" ||
+        formData.paymentMethod.trim() === "";
+
+    // Unified change handler
+    const handleChange = (field: keyof typeof formData) => (//args from keys of formData
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    ) => {
+        const { value } = e.target;
+
+        // Special handling for amount field (format with commas)
+        if (field === "amount") {
+            const cleanedValue = value.replace(/,/g, "");
+            if (cleanedValue === "" || /^[0-9]+$/.test(cleanedValue)) {
+                const formattedValue = cleanedValue.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                setFormData(prev => ({ ...prev, amount: formattedValue }));
+            }
+            return;
+        }
+
+        // Special handling for content field (max length check)
+        if (field === "content" && value.length > MAX_CONTENT_LENGTH) {
+            return;
+        }
+
+        setFormData(prev => ({ ...prev, [field]: value }));
+    };
 
     const handleTypeToggle = () => {
-        setTransaction((prev) => (prev === "expense" ? "income" : "expense"));
-    };
-
-    const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { value } = e.target;
-        const cleanedValue = value.replace(/,/g, "");
-
-        if (cleanedValue === "" || /^[0-9]+$/.test(cleanedValue)) {
-            const formattedValue = cleanedValue.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-            setAmount(formattedValue);
-        }
-    };
-
-    const handleContentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { value } = e.target;
-        if (value.length <= MAX_CONTENT_LENGTH) {
-            setContent(value);
-        }
+        setFormData(prev => ({
+            ...prev,
+            type: prev.type === "expense" ? "income" : "expense"
+        }));
     };
 
     const handleAddPaymentMethod = (newMethod: string) => {
         setPaymentMethods([...paymentMethods, newMethod]);
     };
-
     const handleDeletePaymentMethod = (methodToDelete: string) => {
-        setPaymentMethods(
-            paymentMethods.filter((method) => method !== methodToDelete)
-        );
-        if (selectedPaymentMethod === methodToDelete) {
-            setSelectedPaymentMethod("");
+        setPaymentMethods(paymentMethods.filter((method) => method !== methodToDelete));
+        if (formData.paymentMethod === methodToDelete) {
+            setFormData(prev => ({ ...prev, paymentMethod: "" }));
         }
     };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+
+        // Convert amount from string (with commas) to number
+        const numericAmount = parseFloat(formData.amount.replace(/,/g, ""));
+        const finalAmount = formData.type === "income" ? numericAmount : -numericAmount;
+
+        const newItem = {
+            date: formData.date,
+            amount: finalAmount,
+            content: formData.content,
+            paymentMethod: formData.paymentMethod,
+            category: formData.category,
+            type: formData.type,
+        };
+
+        dispatch({ type: 'ADD_ITEM', payload: newItem });
+
+        // Reset form
+        setFormData({
+            type: "expense",
+            date: getTodayDateString(),
+            amount: "",
+            content: "",
+            paymentMethod: "",
+            category: "",
+        });
+    };
+
     return (
-        <FormContainer>
-            <FormInput label="일자" type="date" defaultValue={todayDate} />
+        <FormContainer onSubmit={handleSubmit}>
+            <FormInput
+                label="일자"
+                type="date"
+                value={formData.date}
+                onChange={handleChange("date")}
+            />
 
             <AmountInput
-                transaction={transaction}
-                amount={amount}
+                transaction={formData.type}
+                amount={formData.amount}
                 onTransactionToggle={handleTypeToggle}
-                onAmountChange={handleAmountChange}
+                onAmountChange={handleChange("amount")}
             />
 
             <FormInput
                 label="내용"
-                value={content}
-                onChange={handleContentChange}
+                value={formData.content}
+                onChange={handleChange("content")}
                 placeholder="내역을 입력하세요"
                 maxLength={MAX_CONTENT_LENGTH}
                 showCharCount={true}
@@ -144,16 +200,21 @@ export default function Form() {
                 <label>결제수단</label>
                 <CustomSelect
                     options={paymentMethods}
-                    selected={selectedPaymentMethod}
-                    onChange={setSelectedPaymentMethod}
+                    selected={formData.paymentMethod}
+                    onChange={(value) => setFormData(prev => ({ ...prev, paymentMethod: value }))}
                     onAdd={handleAddPaymentMethod}
                     onDelete={handleDeletePaymentMethod}
                 />
             </InputGroup>
 
-            <CategorySelect transaction={transaction} categories={CATEGORIES} />
+            <CategorySelect
+                transaction={formData.type}
+                categories={CATEGORIES}
+                value={formData.category}
+                onChange={handleChange("category")}
+            />
 
-            <SubmitButton type="submit" disabled={isButtonDisabled} size="M">
+            <SubmitButton type="submit" disabled={isButtonDisabled} size="M" pattern="iconOnly">
                 ✔
             </SubmitButton>
         </FormContainer>
