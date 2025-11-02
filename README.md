@@ -1,5 +1,17 @@
 # bye2money
 가계부 프로젝트
+
+## Demo
+
+### Main Screen
+![Home](assets/home.png)
+
+### Edit Transaction
+![Edit](assets/edit.png)
+
+### Delete Transaction
+![Delete](assets/delete.png)
+
 ## How to run this project
 
 ### Vite Frontend
