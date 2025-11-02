@@ -1,7 +1,7 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import styled from "styled-components";
 import Button from "../../Header/Button";
-import { getTodayDateString } from "../../../utils";
+import { getTodayDateString, areTransactionsEqual } from "../../../utils";
 import CustomSelect from "./CustomSelect";
 import FormInput from "./FormInput";
 import AmountInput from "./AmountInput";
@@ -16,6 +16,11 @@ const CATEGORIES = {
 };
 
 const MAX_CONTENT_LENGTH = 32;
+
+// Helper function to format number with commas
+const formatAmount = (amount: number): string => {
+    return amount.toLocaleString('ko-KR');
+};
 
 // --- Form styles ---
 const FormContainer = styled.form`
@@ -94,13 +99,43 @@ export default function Form() {
     if (!context) {
         throw new Error('Form must be used within TransactionContext.Provider');
     }
-    const { dispatch } = context;
+    const { dispatch, editingItem, setEditingItem } = context;
+
+    // Populate form when editingItem changes
+    useEffect(() => {
+        if (editingItem) {
+            setFormData({
+                type: editingItem.type,
+                date: editingItem.date,
+                amount: formatAmount(Math.abs(editingItem.amount)),
+                content: editingItem.content,
+                paymentMethod: editingItem.paymentMethod,
+                category: editingItem.category,
+            });
+        }
+    }, [editingItem]);
+
+    // Check if form data is different from editing item
+    const hasChanges = editingItem ? !areTransactionsEqual(
+        editingItem,
+        {
+            type: formData.type,
+            date: formData.date,
+            amount: formData.type === "income"
+                ? parseFloat(formData.amount.replace(/,/g, ""))
+                : -parseFloat(formData.amount.replace(/,/g, "")),
+            content: formData.content,
+            paymentMethod: formData.paymentMethod,
+            category: formData.category
+        }
+    ) : true; // Always allow submission for new items
 
     const isButtonDisabled =
         formData.amount.trim() === "" ||
         formData.content.trim() === "" ||
         formData.paymentMethod.trim() === "" ||
-        formData.category.trim() === "";
+        formData.category.trim() === "" ||
+        !hasChanges; // Disable if editing and nothing changed
 
     // Unified change handler
     const handleChange = (field: keyof typeof formData) => (//args from keys of formData
@@ -122,7 +157,7 @@ export default function Form() {
         if (field === "content" && value.length > MAX_CONTENT_LENGTH) {
             return;
         }
-
+        // general set function for arbitrary fields
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
@@ -159,7 +194,20 @@ export default function Form() {
             type: formData.type,
         };
 
-        dispatch({ type: 'ADD_ITEM', payload: newItem });
+        if (editingItem) {
+            // Update mode
+            dispatch({
+                type: 'UPDATE_ITEM',
+                payload: {
+                    oldItem: editingItem,
+                    newItem
+                }
+            });
+            setEditingItem(null);   //turn off edit state
+        } else {
+            // Add mode
+            dispatch({ type: 'ADD_ITEM', payload: newItem });
+        }
 
         // Reset form
         setFormData({

@@ -252,18 +252,20 @@ export default function TransactionList() {
     throw new Error('TransactionList must be used within TransactionContext.Provider');
   }
 
-  const { transactions, dispatch } = context;
+  const { transactions, dispatch, setEditingItem } = context;
 
-  const handleDelete = (transaction: Transaction) => {
+  const handleDelete = (e: React.MouseEvent, transaction: Transaction) => {
+    e.stopPropagation(); // Prevent triggering the edit onClick
     const typeText = transaction.type === "income" ? "수입" : "지출";
     const message = `해당 내역을 삭제하시겠습니까?\n카테고리: ${typeText}/${transaction.category}\n내용: ${transaction.content}\n결제수단: ${transaction.paymentMethod}\n금액: ${formatAmount(transaction.amount)}원`;
 
     if (window.confirm(message)) {
       dispatch({ type: 'DELETE_ITEM', payload: transaction });
-      // setTimeout(() => {
-
-      // }, 1000);
     }
+  };
+
+  const handleItemClick = (transaction: Transaction) => {
+    setEditingItem(transaction);
   };
 
   if (transactions.length === 0) {
@@ -314,14 +316,14 @@ export default function TransactionList() {
 
             <TransactionItemsContainer>
               {dailyTransactions.map((transaction, index) => (
-                <TransactionItem key={index}>
+                <TransactionItem key={index} onClick={() => handleItemClick(transaction)}>
                   <Category>{transaction.category}</Category>
                   <Content>{transaction.content}</Content>
                   <PaymentMethod>{transaction.paymentMethod}</PaymentMethod>
                   <Amount isIncome={transaction.amount > 0}>
                     {transaction.amount > 0 ? '+' : '-'}{formatAmount(transaction.amount)}원
                   </Amount>
-                  <DeleteButton onClick={() => handleDelete(transaction)}>
+                  <DeleteButton onClick={(e) => handleDelete(e, transaction)}>
                     삭제
                   </DeleteButton>
                 </TransactionItem>
