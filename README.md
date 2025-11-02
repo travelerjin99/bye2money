@@ -6,11 +6,14 @@
 ### Main Screen
 ![Home](assets/home.png)
 
-### Edit Transaction
-![Edit](assets/edit.png)
+### Add Transaction
+![Edit](assets/add.png)
 
 ### Delete Transaction
 ![Delete](assets/delete.png)
+
+### Edit Transaction
+![Edit](assets/edit.png)
 
 ## How to run this project
 
