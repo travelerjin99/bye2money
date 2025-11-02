@@ -122,7 +122,7 @@ const TransactionItemsContainer = styled.div`
   border-bottom: 1px solid black;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  // gap: 2px;
 `;
 
 const TransactionItem = styled.div`
@@ -140,12 +140,26 @@ const TransactionItem = styled.div`
   }
 `;
 
-const Category = styled.div`
+const Category = styled.div<{ category: string }>`
   font-size: 12px;
   color: #333;
   text-align: center;
   justify-content: center;
-  background-color: #e8e8e8;
+  background-color: ${props => {
+    const categoryColors: { [key: string]: string } = {
+      "생활": "#a7b9e9",
+      "식비": "#c5e0eb",
+      "교통": "#7db7bf",
+      "쇼핑/뷰티": "#d7ca6b",
+      "의료/건강": "#bcdfd3",
+      "문화/여가": "#bda6e1",
+      "미분류": "#f0b0d3",
+      "월급": "#e39d5d",
+      "용돈": "#aacd7e",
+      "기타 수입": "#a28878"
+    };
+    return categoryColors[props.category] || "#e8e8e8";
+  }};
   font-weight: 500;
   align-self: stretch;
   display: flex;
@@ -169,7 +183,7 @@ const Amount = styled.div<{ isIncome: boolean }>`
   font-size: 15px;
   font-weight: 700;
   text-align: right;
-  color: #333;
+  color: ${props => props.isIncome ? '#4caf50' : '#f44336'};
 `;
 
 const DeleteButton = styled.button`
@@ -317,7 +331,7 @@ export default function TransactionList() {
             <TransactionItemsContainer>
               {dailyTransactions.map((transaction, index) => (
                 <TransactionItem key={index} onClick={() => handleItemClick(transaction)}>
-                  <Category>{transaction.category}</Category>
+                  <Category category={transaction.category}>{transaction.category}</Category>
                   <Content>{transaction.content}</Content>
                   <PaymentMethod>{transaction.paymentMethod}</PaymentMethod>
                   <Amount isIncome={transaction.amount > 0}>

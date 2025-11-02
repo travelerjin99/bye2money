@@ -128,7 +128,7 @@ export default function Form() {
             paymentMethod: formData.paymentMethod,
             category: formData.category
         }
-    ) : true; // Always allow submission for new items
+    ) : true; // Always allow add items
 
     const isButtonDisabled =
         formData.amount.trim() === "" ||
